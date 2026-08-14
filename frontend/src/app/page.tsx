@@ -18,7 +18,7 @@ export default function Home() {
           Create Content That <span className="text-gray-400">Converts</span>
         </h2>
         <p className="text-xl text-gray-400 max-w-2xl mb-10">
-          AI se blogs, social posts, emails sab generate karo seconds mein.
+          Generate blogs, social posts, emails, and more in seconds with AI. 
           Professional content without the writer's block.
         </p>
         <div className="flex gap-4">
