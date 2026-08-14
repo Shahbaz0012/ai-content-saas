@@ -22,6 +22,16 @@ def save_content(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
+    # Check credits
+    user = db.query(models.User).filter(models.User.id == current_user["id"]).first()
+    if user.credits <= 0:
+        raise HTTPException(status_code=403, detail="No credits remaining. Please upgrade.")
+    
+    # Deduct 1 credit
+    user.credits -= 1
+    db.commit()
+    
+    # Save content
     db_content = models.ContentHistory(
         user_id=current_user["id"],
         prompt=data.prompt,
@@ -33,7 +43,12 @@ def save_content(
     db.add(db_content)
     db.commit()
     db.refresh(db_content)
-    return {"message": "Content saved", "id": db_content.id}
+    
+    return {
+        "message": "Content saved",
+        "id": db_content.id,
+        "credits_remaining": user.credits
+    }
 
 
 @router.get("/history")
@@ -45,3 +60,12 @@ def get_history(
         models.ContentHistory.user_id == current_user["id"]
     ).order_by(models.ContentHistory.created_at.desc()).all()
     return history
+
+
+@router.get("/credits")
+def get_credits(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    user = db.query(models.User).filter(models.User.id == current_user["id"]).first()
+    return {"credits": user.credits, "max_credits": 5}

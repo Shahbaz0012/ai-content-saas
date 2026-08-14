@@ -2,7 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models
-from app.utils.security import get_password_hash, verify_password, create_access_token, get_current_user
+from app.utils.security import (
+    get_password_hash, 
+    verify_password, 
+    create_access_token, 
+    get_current_user
+)
 from pydantic import BaseModel, EmailStr
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -25,12 +30,17 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     hashed = get_password_hash(data.password)
-    user = models.User(email=data.email, hashed_password=hashed)
+    user = models.User(email=data.email, hashed_password=hashed, credits=5)
     db.add(user)
     db.commit()
     db.refresh(user)
     
-    return {"message": "User created", "user_id": user.id, "email": user.email}
+    return {
+        "message": "User created",
+        "user_id": user.id,
+        "email": user.email,
+        "credits": user.credits
+    }
 
 
 @router.post("/login")
