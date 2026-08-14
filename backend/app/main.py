@@ -6,6 +6,7 @@ from app.database import Base, engine
 from app import models
 from app.services.openai_service import generate_content
 from app.routers import content
+from app.routers import auth
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -26,7 +27,7 @@ app.add_middleware(
 
 # Include content router
 app.include_router(content.router)
-
+app.include_router(auth.router)
 
 class GenerateRequest(BaseModel):
     prompt: str
