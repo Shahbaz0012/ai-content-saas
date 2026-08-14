@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models
-from app.utils.security import get_password_hash, verify_password, create_access_token
+from app.utils.security import get_password_hash, verify_password, create_access_token, get_current_user
 from pydantic import BaseModel, EmailStr
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -20,12 +20,10 @@ class LoginRequest(BaseModel):
 
 @router.post("/register")
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
-    # Check if user exists
     existing = db.query(models.User).filter(models.User.email == data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Create user
     hashed = get_password_hash(data.password)
     user = models.User(email=data.email, hashed_password=hashed)
     db.add(user)
@@ -43,3 +41,16 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     
     token = create_access_token({"sub": str(user.id), "email": user.email})
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.get("/me")
+def get_me(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == current_user["id"]).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "id": user.id,
+        "email": user.email,
+        "credits": user.credits,
+        "created_at": user.created_at
+    }
