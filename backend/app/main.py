@@ -1,27 +1,32 @@
-# Main FastAPI application entry point
-# Milestone 1: Basic server with health check endpoint
+# Main FastAPI application
 
 from fastapi import FastAPI
 
-# Initialize FastAPI application
+from app.database import Base, engine
+from app import models
+
+# Create database tables on startup
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(
     title="AI Content Generator API",
     description="Backend API for AI-powered content generation SaaS",
-    version="0.1.0"
+    version="0.2.0"
 )
 
-# Root endpoint - confirms API is running
+
 @app.get("/")
 def root():
     return {
         "message": "AI Content Generator API is running",
         "status": "ok",
-        "version": "0.1.0"
+        "version": "0.2.0"
     }
 
-# Health check endpoint for monitoring
+
 @app.get("/health")
 def health_check():
     return {
-        "status": "healthy"
+        "status": "healthy",
+        "database": "connected"
     }
