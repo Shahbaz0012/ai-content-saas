@@ -1,32 +1,57 @@
 # Main FastAPI application
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 from app.database import Base, engine
 from app import models
-
-# Create database tables on startup
+from app.services.openai_service import generate_content
+from dotenv import load_dotenv
+load_dotenv()
+# Create database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="AI Content Generator API",
-    description="Backend API for AI-powered content generation SaaS",
-    version="0.2.0"
+    version="0.3.0"
 )
+
+
+class GenerateRequest(BaseModel):
+    prompt: str
+    content_type: str = "blog"
+    tone: str = "professional"
 
 
 @app.get("/")
 def root():
-    return {
-        "message": "AI Content Generator API is running",
-        "status": "ok",
-        "version": "0.2.0"
-    }
+    return {"message": "AI Content Generator API", "version": "0.3.0"}
 
 
 @app.get("/health")
 def health_check():
-    return {
-        "status": "healthy",
-        "database": "connected"
-    }
+    return {"status": "healthy"}
+
+
+@app.post("/api/generate")
+async def create_content(request: GenerateRequest):
+    """
+    Generate AI content - Milestone 3
+    """
+    try:
+        content = await generate_content(
+            prompt=request.prompt,
+            content_type=request.content_type,
+            tone=request.tone
+        )
+        
+        word_count = len(content.split())
+        
+        return {
+            "content": content,
+            "word_count": word_count,
+            "content_type": request.content_type
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
